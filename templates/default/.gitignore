@@ -1,6 +1,4 @@
-build/
-.cache/
-compile_commands.json
-.direnv/
+/app
 result
 result-*
+.direnv/

@@ -1,2 +1,18 @@
 CompileFlags:
-  CompilationDatabase: build
+  Compiler: clang++
+  Add:
+    - -std=c++26
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+    - -Wshadow
+    - -Wnon-virtual-dtor
+    - -Wold-style-cast
+    - -Wcast-align
+    - -Woverloaded-virtual
+    - -Wconversion
+    - -Wsign-conversion
+    - -Wnull-dereference
+    - -Wdouble-promotion
+    - -Wformat=2
+    - -Wimplicit-fallthrough

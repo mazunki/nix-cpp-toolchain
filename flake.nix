@@ -31,25 +31,31 @@
       "-Wdouble-promotion" "-Wformat=2" "-Wimplicit-fallthrough"
     ];
 
-    mkCppPackage = { pkgs, pname, src, cmakeFlags ? [] }:
+    clangFlags = [ "-std=c++${cxxStandard}" ] ++ warningFlags;
+
+    mkCppPackage = { pkgs, pname, src, srcDir ? "src", extraFlags ? [] }:
       let stdenv = stdenvFor pkgs.system;
       in stdenv.mkDerivation {
         name = pname;
         inherit src;
-        nativeBuildInputs = [ pkgs.cmake ];
-        cmakeFlags = [
-          "-DCMAKE_CXX_STANDARD=${cxxStandard}"
-          "-DCMAKE_CXX_STANDARD_REQUIRED=ON"
-          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-          "-DCMAKE_CXX_FLAGS=${pkgs.lib.concatStringsSep " " warningFlags}"
-        ] ++ cmakeFlags;
+        dontConfigure = true;
+        buildPhase = ''
+          runHook preBuild
+          $CXX ${pkgs.lib.concatStringsSep " " (clangFlags ++ extraFlags)} ${srcDir}/*.cpp -o ${pname}
+          runHook postBuild
+        '';
+        installPhase = ''
+          runHook preInstall
+          install -Dm755 ${pname} $out/bin/${pname}
+          runHook postInstall
+        '';
       };
 
     mkCppShell = { pkgs, extraPackages ? [] }:
       let llvm = llvmFor pkgs.system;
       in (pkgs.mkShell.override { stdenv = llvm.stdenv; }) {
-        packages = [ pkgs.cmake llvm.clang-tools ] ++ extraPackages;
-        CXXFLAGS = pkgs.lib.concatStringsSep " " warningFlags;
+        packages = [ llvm.clang-tools ] ++ extraPackages;
+        CXXFLAGS = pkgs.lib.concatStringsSep " " clangFlags;
       };
   in
   {
@@ -61,7 +67,7 @@
     });
 
     lib = {
-      inherit pkgsFor mkCppPackage mkCppShell warningFlags cxxStandard;
+      inherit pkgsFor mkCppPackage mkCppShell warningFlags clangFlags cxxStandard;
     };
 
     devShells = forAllSystems (system: {
